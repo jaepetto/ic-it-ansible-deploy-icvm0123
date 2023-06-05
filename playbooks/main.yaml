@@ -1,0 +1,43 @@
+- name: Install server and configure it
+  hosts: all
+  become: true
+  roles:
+    - role: secondary_disk
+      vars:
+        device: /dev/sdb
+        fs_type: xfs
+        mount_path: /srv
+
+    - role: fail2ban
+
+    - role: geerlingguy.ntp
+      vars:
+        ntp_enabled: true
+        ntp_timezone: Europe/Zurich
+        ntp_area: 'ch'
+
+    - role: geerlingguy.firewall
+      vars:
+        firewall_allowed_tcp_ports:
+          - '22' # SSH
+          - '9100' # node_exporter
+
+    - role: geerlingguy.pip
+      vars:
+        pip_install_packages:
+          - name: docker-compose
+            state: latest
+          - name: docker
+            state: latest
+
+    - role: geerlingguy.docker
+      vars:
+        docker_daemon_options:
+          data-root: /srv/docker
+
+    - role: deploy_ic_it_ssh_keys
+
+    - role: geerlingguy.node_exporter
+      vars:
+        node_exporter_host: '0.0.0.0'
+        node_exporter_port: 9100
